@@ -6,8 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install build deps if requirements has wheels that need compiling (optional)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential \
+# Install build deps and ODBC runtime/headers required by pyodbc
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc build-essential unixodbc unixodbc-dev libodbc1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
