@@ -1,36 +1,38 @@
-FROM python:3.9
+# Use Python 3.11 slim image as base
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies and ODBC drivers
-RUN apt-get update && \
-    apt-get install -y curl gnupg2 apt-transport-https && \
-    
-    # Add Microsoft repo for ODBC SQL driver
-    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
-    > /etc/apt/sources.list.d/mssql-release.list && \
-    
-    apt-get update && \
-    ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
-    apt-get install -y unixodbc unixodbc-dev && \
-    
-    # Update linker cache
-    echo "/opt/microsoft/msodbcsql18/lib64" > /etc/ld.so.conf.d/msodbcsql18.conf && \
-    ldconfig && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install system dependencies required for pyodbc and ODBC drivers
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    unixodbc-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy application files
+# Install Microsoft ODBC Driver for SQL Server
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Set environment variables
-ENV LD_LIBRARY_PATH="/opt/microsoft/msodbcsql18/lib64:${LD_LIBRARY_PATH}"
+# Copy application code
+COPY app.py .
 
+# Expose port 8000
 EXPOSE 8000
+
+# Set environment variable for uvicorn
+ENV PYTHONUNBUFFERED=1
+
+# Run the application using uvicorn
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
