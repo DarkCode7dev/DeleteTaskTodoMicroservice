@@ -18,10 +18,13 @@ RUN apt-get update && apt-get install -y \
     msodbcsql18 \
     unixodbc \
     unixodbc-dev \
+    libodbc1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Update library cache to ensure libodbc.so.2 is found
-RUN ldconfig
+# Update library cache and verify ODBC library location
+RUN ldconfig && \
+    find /usr -name "libodbc.so*" 2>/dev/null && \
+    ldconfig -p | grep odbc
 
 # Copy requirements file
 COPY requirements.txt .
@@ -35,8 +38,9 @@ COPY app.py .
 # Expose port 8000
 EXPOSE 8000
 
-# Set environment variable for uvicorn
+# Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
 # Run the application using uvicorn
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
