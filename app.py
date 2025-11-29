@@ -48,7 +48,7 @@ def create_tasks_table():
     except Exception as e:
         print(e)
         if "There is already an object named 'Tasks' in the database." in str(e):
-            return "Add Tasks API Ready."
+            return "Delete Tasks API Ready."
         else:
             return "Error. Please check Logs."
 

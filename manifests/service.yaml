@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: todo-delete-tasks-api
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: todo-delete-tasks-api
   ports:
